@@ -106,10 +106,10 @@ do
 
         obj.MonitorID = nil
 
-        obj.inZoneUnits = {
-            [1] = {},
-            [2] = {},
-        }
+        -- obj.inZoneUnits = {
+        --     [1] = {},
+        --     [2] = {},
+        -- }
         obj.SiegeMonitor = {
             id = nil,
             progress = 0,
@@ -203,15 +203,15 @@ do
                 text = text..'SiegeMonitor progress: '..self.SiegeMonitor.progress..'\n'
             end 
             
-            text = text..'InZoneUnits_Red:\n'
-            for unitName, unit in pairs(self.inZoneUnits[1]) do
-                text = text .. unitName .. '\n'
-            end
+            -- text = text..'InZoneUnits_Red:\n'
+            -- for unitName, unit in pairs(self.inZoneUnits[1]) do
+            --     text = text .. unitName .. '\n'
+            -- end
             
-            text = text .. 'InZoneUnits_Blue:\n'
-            for unitName, unit in pairs(self.inZoneUnits[2]) do
-                text = text .. unitName .. '\n'
-            end
+            -- text = text .. 'InZoneUnits_Blue:\n'
+            -- for unitName, unit in pairs(self.inZoneUnits[2]) do
+            --     text = text .. unitName .. '\n'
+            -- end
         end
         
         trigger.action.setMarkupText(textID,text)
@@ -346,94 +346,104 @@ do
         self:changeText()
     end
 
-    function CaptureZone:updateInZoneUnits()
-        local unitCount = {
-            [1] = 0,
-            [2] = 0,
-        }
+    -- function CaptureZone:updateInZoneUnits()
+    --     local unitCount = {
+    --         [1] = 0,
+    --         [2] = 0,
+    --     }
 
-        for unitName, unit in pairs(CaptureZone.GroundUnits) do
-            if unit:isExist() then
-                if unit:isActive() then
-                    if unit:getLife() >= 1 then
-                        if not self.inZoneUnits[unit:getCoalition()][unitName] then
-                            local point = unit:getPoint()
-                            if self:isInside(point) then
-                                self.inZoneUnits[unit:getCoalition()][unitName] = unit
-                            end
+    --     for unitName, unit in pairs(CaptureZone.GroundUnits) do
+    --         if unit:isExist() then
+    --             if unit:isActive() then
+    --                 if unit:getLife() >= 1 then
+    --                     if not self.inZoneUnits[unit:getCoalition()][unitName] then
+    --                         local point = unit:getPoint()
+    --                         if self:isInside(point) then
+    --                             self.inZoneUnits[unit:getCoalition()][unitName] = unit
+    --                         end
+    --                     end
+    --                 end
+    --             end
+    --         end
+    --     end
+
+    --     local unitsNeedRemove = {
+    --         [1] = {},
+    --         [2] = {},
+    --     }
+
+    --     for tCoalition, units in pairs(self.inZoneUnits) do
+    --         for unitName, unit in pairs(units) do
+    --             trigger.action.outText(self.zoneName..': unitName: '..unitName, 10) --Debug
+
+    --             if not unit:isExist() then
+    --                 table.insert(unitsNeedRemove[tCoalition],unitName)
+    --             end
+
+    --             if unit:isExist() then
+    --                 if not unit:isActive() then
+    --                     table.insert(unitsNeedRemove[tCoalition],unitName)
+    --                 end
+
+    --                 if unit:isActive() then
+    --                     unitCount[tCoalition] = unitCount[tCoalition] + 1
+
+    --                     local point = unit:getPoint()
+
+    --                     if unit:getLife() < 1 or not self:isInside(point) then
+    --                         table.insert(unitsNeedRemove[tCoalition],unitName)
+    --                     end
+    --                 end
+    --             end
+    --         end
+    --     end
+
+    --     for tCoalition, unitNames in ipairs(unitsNeedRemove) do
+    --         for i, unitName in pairs(unitNames) do
+    --             trigger.action.outText("remove: "..unitName, 10) --Debug
+    --             self.inZoneUnits[tCoalition][unitName] = nil
+    --             if unitCount[tCoalition] > 0 then
+    --                 unitCount[tCoalition] = unitCount[tCoalition] - 1
+    --             end
+    --         end
+    --     end
+
+    --     return unitCount[1], unitCount[2]
+    -- end
+
+    function CaptureZone:updateInZoneUnits(countNumber)
+        local unitCount = { [1] = 0, [2] = 0 }
+        local groundUnits = CaptureZone.GroundUnits
+        local isInside = self.isInside
+
+        for unitName, unit in pairs(groundUnits) do
+            if unit:isExist() and unit:isActive() and unit:getLife() >= 1 then
+                local point = unit:getPoint()
+                if isInside(self,point) then
+                    local tCoalition = unit:getCoalition()
+                    unitCount[tCoalition] = (unitCount[tCoalition] or 0) + 1
+
+                    if tCoalition ~= self.coalition then
+                        if not self.SiegeMonitor.id then
+                            self:_SiegeMonitorStart()
                         end
                     end
                 end
             end
         end
 
-        local unitsNeedRemove = {
-            [1] = {},
-            [2] = {},
-        }
-
-        for tCoalition, units in pairs(self.inZoneUnits) do
-            for unitName, unit in pairs(units) do
-                trigger.action.outText(self.zoneName..': unitName: '..unitName, 10) --Debug
-
-                if not unit:isExist() then
-                    table.insert(unitsNeedRemove[tCoalition],unitName)
-                end
-
-                if unit:isExist() then
-                    if not unit:isActive() then
-                        table.insert(unitsNeedRemove[tCoalition],unitName)
-                    end
-
-                    if unit:isActive() then
-                        unitCount[tCoalition] = unitCount[tCoalition] + 1
-
-                        local point = unit:getPoint()
-
-                        if unit:getLife() < 1 or not self:isInside(point) then
-                            table.insert(unitsNeedRemove[tCoalition],unitName)
-                        end
-                    end
-                end
-            end
+        if countNumber then
+            return unitCount[1], unitCount[2]
         end
 
-        for tCoalition, unitNames in ipairs(unitsNeedRemove) do
-            for i, unitName in pairs(unitNames) do
-                trigger.action.outText("remove: "..unitName, 10) --Debug
-                self.inZoneUnits[tCoalition][unitName] = nil
-                if unitCount[tCoalition] > 0 then
-                    unitCount[tCoalition] = unitCount[tCoalition] - 1
-                end
-            end
-        end
-
-        return unitCount[1], unitCount[2]
+        return
     end
 
     function  CaptureZone._MonitorFunction(vars,time)
         local self = vars.context
         local repeatTime = vars.repeatTime
 
-        local redUnitNumber, blueUnitNumber = self:updateInZoneUnits()
-
-        if not self.SiegeMonitor.id then
-            if self.coalition == coalition.side.NEUTRAL then
-                if redUnitNumber>0 or blueUnitNumber>0 then
-                    --start siege monitor
-                    self:_SiegeMonitorStart()
-                end
-            end
-
-            if self.coalition ~= coalition.side.NEUTRAL then
-                if redUnitNumber>0 and redUnitNumber>0 then
-                    if redUnitNumber ~= blueUnitNumber then
-                        --start siege monitor
-                        self:_SiegeMonitorStart()
-                    end
-                end
-            end
-        end
+        self:updateInZoneUnits()
 
         self:changeText()
         -- if Config.Debug then
@@ -469,7 +479,7 @@ do
             blue = 0,
         }
        
-        unitNumber.red, unitNumber.blue = self:updateInZoneUnits()
+        unitNumber.red, unitNumber.blue = self:updateInZoneUnits(true)
         trigger.action.outText("unitNumber.red: "..unitNumber.red.." unitNumber.blue: "..unitNumber.blue, 10) --Debug
         
         if unitNumber.red > unitNumber.blue then
@@ -610,15 +620,15 @@ do
             newText = newText..'SiegeMonitor progress: '..self.SiegeMonitor.progress..'\n'
         end 
         
-        newText = newText..'InZoneUnits_Red:\n'
-        for unitName, unit in pairs(self.inZoneUnits[1]) do
-            newText = newText .. unitName .. '\n'
-        end
+        -- newText = newText..'InZoneUnits_Red:\n'
+        -- for unitName, unit in pairs(self.inZoneUnits[1]) do
+        --     newText = newText .. unitName .. '\n'
+        -- end
         
-        newText = newText .. 'InZoneUnits_Blue:\n'
-        for unitName, unit in pairs(self.inZoneUnits[2]) do
-            newText = newText .. unitName .. '\n'
-        end
+        -- newText = newText .. 'InZoneUnits_Blue:\n'
+        -- for unitName, unit in pairs(self.inZoneUnits[2]) do
+        --     newText = newText .. unitName .. '\n'
+        -- end
 
         self:changeText(newText)
     end
@@ -681,21 +691,35 @@ do
     end
 end
 
--- local zone = trigger.misc.getZone("Zone-Senaki")
+-- local zoneNames = {
+--     "Zone-Senaki",
+--     "Zone-Charlie",
+--     "Zone-Port",
+
+-- }
+-- local zoneNumber = 2
+
+-- local zone = trigger.misc.getZone(zoneNames[zoneNumber])
 -- local group = Group.getByName('Ground-1')
 
+-- local groupName = "Ground-3"
+-- local spawnPoint = {
+--     x = zone.point.x,
+--     y = zone.point.z,
+-- }
+
 -- local spawnData = {}
--- spawnData.name = "test-3"
+-- spawnData.name = groupName
 -- spawnData.task = "Ground nothing"
 -- local unitsTable = {}
 -- for i, unit in ipairs(group:getUnits()) do
 --     local unitData = {}
---     unitData.name = "test-3-"..i
+--     unitData.name = groupName..'-'..i
 --     unitData.type = unit:getTypeName()
---     unitData.x = zone.point.x+50
---     unitData.y = zone.point.z
+--     unitData.x = spawnPoint.x
+--     unitData.y = spawnPoint.y
 --     table.insert(unitsTable,unitData)
 -- end
 
 -- spawnData.units = unitsTable
--- coalition.addGroup(Config.Country[2],group:getCategory(),spawnData)
+-- coalition.addGroup(Config.Country[1],group:getCategory(),spawnData)
