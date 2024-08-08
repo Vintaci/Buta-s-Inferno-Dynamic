@@ -17,6 +17,11 @@ do
         [2] = country.id.CJTF_BLUE,
     }
 
+    Config.CustomEvent = {
+        Captured = Utils.NewEvent(),
+        Neutualized = Utils.NewEvent(),
+    }
+
     Config.drawIndexTabel = Utils.getIndexTable(1,1000,1)
 
     -----------CaptureZone-----------

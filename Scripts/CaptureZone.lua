@@ -21,8 +21,8 @@ do
     }
 
     CaptureZone.Events = {
-        Captured = Utils.NewEvent(),
-        Neutualized = Utils.NewEvent(),
+        Captured = Config.CustomEvent.Captured,
+        Neutualized = Config.CustomEvent.Neutualized,
     }
     
     CaptureZone.COLOR = {
@@ -80,6 +80,15 @@ do
 
         local initCoalition = initCoalition or Config.coalition.Neutual
         
+        if CaptureZone.allZones[zoneName] then
+
+            if CaptureZone.allZones[zoneName].MonitorID then
+                CaptureZone.allZones[zoneName]:stop()
+            end
+
+            CaptureZone.allZones[zoneName] = nil
+        end
+
         local obj = {}
 
         obj.zone = trigger.misc.getZone(zoneName)
@@ -157,22 +166,22 @@ do
 
         if self.SiegeMonitor.id then
             msg = msg..'\n'
-                msg = msg..'['
-                local percentage = math.abs(self.SiegeMonitor.progress)*10/CaptureZone.CaptureTime*10
-                percentage = math.floor(percentage/10)
+            msg = msg..'['
+            local percentage = math.abs(self.SiegeMonitor.progress)*10/CaptureZone.CaptureTime*10
+            percentage = math.floor(percentage/10)
 
-                for i=0,percentage,1 do
-                    if i>0 then
-                        -- msg = msg..'▮'
-                        msg = msg..'◆'
-                    end
+            for i=0,percentage,1 do
+                if i>0 then
+                    -- msg = msg..'▮'
+                    msg = msg..'◆'
                 end
+            end
 
-                for j=1,10-percentage,1 do
-                    -- msg = msg..'-'
-                    msg = msg..'◇'
-                end
-                msg = msg..']'
+            for j=1,10-percentage,1 do
+                -- msg = msg..'-'
+                msg = msg..'◇'
+            end
+            msg = msg..']'
         end
 
         return msg
@@ -689,37 +698,115 @@ do
             end
         end 
     end
+
+    CaptureZone.allZones['Zone-Sochi']:capture(2)
+    CaptureZone.allZones['Zone-Batumi']:capture(1)
 end
 
--- local zoneNames = {
---     "Zone-Senaki",
---     "Zone-Charlie",
---     "Zone-Port",
+function debugFunc(templateName, groupName, zoneNumber,tCoalition, parkingId)
+    local zoneNames = {
+        "Zone-Senaki",
+        "Zone-Charlie",
+        "Zone-Port",
+    
+    }
+    
+    local zone = trigger.misc.getZone(zoneNames[zoneNumber])
+    local group = Group.getByName(templateName)
+    
+    
+    local groupName = groupName
+    local spawnPoint = {
+        x = zone.point.x,
+        y = zone.point.z,
+    }
+    
+    local function getClosestAirbase(point)
+        local airbases = world.getAirbases()
+        local closest = nil
+        local minDist = 999999
+        for i,base in ipairs(airbases) do
+            local distance = Utils.get2DDist(point, base:getPoint())
+            if distance < minDist then
+                closest = base
+                minDist = distance
+            end
+        end
+    
+        return closest
+    end
+    
+    local closestAirbase = getClosestAirbase(spawnPoint)
+    local parkings = closestAirbase:getParking(true)
+    
+    if not parkings then 
+        trigger.action.outText('No parking',10)
+    end
 
--- }
--- local zoneNumber = 2
+    local msg = ''
+    for i, parking in ipairs(parkings) do
 
--- local zone = trigger.misc.getZone(zoneNames[zoneNumber])
--- local group = Group.getByName('Ground-1')
+        if parking.Term_Index then
+            msg = msg..parking.Term_Index..'\n'
+        end
 
--- local groupName = "Ground-3"
--- local spawnPoint = {
---     x = zone.point.x,
---     y = zone.point.z,
--- }
+        if not parking.Term_Index then
+            trigger.action.circleToAll(-1,Utils.selectAvailableIndex(Config.drawIndexTabel),parking.vTerminalPos,50,{1,0,0,0.5},{1,0,0,0.3},1)
+        end
+    end
 
--- local spawnData = {}
--- spawnData.name = groupName
--- spawnData.task = "Ground nothing"
--- local unitsTable = {}
--- for i, unit in ipairs(group:getUnits()) do
---     local unitData = {}
---     unitData.name = groupName..'-'..i
---     unitData.type = unit:getTypeName()
---     unitData.x = spawnPoint.x
---     unitData.y = spawnPoint.y
---     table.insert(unitsTable,unitData)
--- end
+    if msg then
+        trigger.action.outText(msg,10)
+    end
 
--- spawnData.units = unitsTable
--- coalition.addGroup(Config.Country[1],group:getCategory(),spawnData)
+    local spawnData = {}
+    spawnData.name = groupName
+    spawnData.task = 'Nothing'
+    local unitsTable = {}
+    for i, unit in ipairs(group:getUnits()) do
+        local unitData = {}
+        unitData.name = groupName..'-'..i
+        unitData.type = unit:getTypeName()
+        unitData.x = spawnPoint.x
+        unitData.y = spawnPoint.y 
+        unitData.speed = 162
+        unitData.alt = 610
+        unitData.alt_type = "RADIO"
+        table.insert(unitsTable,unitData)
+    end
+    spawnData.uncontrolled = true
+    spawnData.route = {
+        ["points"] = 
+        {
+            [1] = 
+            {
+                ["type"] = "TakeOffParking",
+                ['airdromeId'] = closestAirbase:getID(),
+            }, -- end of [1]
+        }, -- end of ["points"]
+    }
+    
+    spawnData.units = unitsTable
+
+    if parkingId then
+        spawnData.units[1]['parking_id'] = parkingId
+    end
+
+    local newGroup = coalition.addGroup(Config.Country[tCoalition],group:getCategory(),spawnData)
+
+    if newGroup.getName then
+        local newGroupName = newGroup:getName()
+        trigger.action.outText('newGroupName: '..newGroupName,10)
+    end
+end
+
+-- debugFunc('固定翼-1','固定翼-2',1,2)
+
+-- local group = Group.getByName('固定翼-2')
+-- -- local groupController = group:getUnit(1):getController()
+-- local groupController = group:getController()
+-- groupController:setCommand({
+--     id = 'Start', 
+--     params = { 
+--     } 
+-- })

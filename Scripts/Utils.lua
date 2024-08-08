@@ -276,4 +276,20 @@ do
 		return (vec.x^2 + vec.y^2 + vec.z^2)^0.5
 	end
 
+    function Utils.getNearestAirbase(vec2)
+        local airbases = world.getAirbases()
+        if not airbases then return nil end
+        
+        local closest = nil
+        local minDist = 999999
+        for i,base in ipairs(airbases) do
+            local distance = Utils.get2DDist(vec2, base:getPoint())
+            if distance < minDist then
+                closest = base
+                minDist = distance
+            end
+        end
+    
+        return closest
+    end
 end

@@ -4,6 +4,7 @@ do
     Languages = {
         ['cn'] = {
             ['Error: CaptureZone - New(): trigger zone named [%s] not found.'] = 'Error: CaptureZone - New(): 没有找到名称为[%s]的触发区.',
+            ['There is no available airbase for %s to spawn'] = '附近没有可以为 %s 出生的机场.',
         }
     }
 
@@ -12,13 +13,16 @@ do
             error("Languages:translate: text is nil.")
             return 
         end
-        lang = lang or 'en'
+        lang = lang or Config.lang or 'en'
 
         lang = lang:lower() -- 统一语言标识的大小写
         local translations = self[lang]
     
         if not translations then
-            env.warning("Warning: Language '" .. lang .. "' not supported, falling back to English.")
+            if lang ~= 'en' then
+                env.warning("Warning: Language '" .. lang .. "' not supported, falling back to English.")
+            end
+            
             return text
         end
     
