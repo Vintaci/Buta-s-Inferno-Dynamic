@@ -170,6 +170,7 @@ do
         local tCategory = group:getCategory()
 
         local templateData = {}
+        templateData.templateName = templateName or groupData.name
         templateData.name = templateName or groupData.name
         templateData.task = groupData.task or "Nothing"
         templateData.units = {}
@@ -183,10 +184,44 @@ do
             table.insert(templateData.units,unitData)
         end
 
+        Spawner.groupTemplate[tCoalition] = Spawner.groupTemplate[tCoalition] or {}
+        Spawner.groupTemplate[tCoalition][tCategory] = Spawner.groupTemplate[tCoalition][tCategory] or {}
+        Spawner.groupTemplate[tCoalition][tCategory][templateData.task] = Spawner.groupTemplate[tCoalition][tCategory][templateData.task] or {}
+
         table.insert(Spawner.groupTemplate[tCoalition][tCategory][templateData.task],templateData)
     end
 
-    function Spawner.addStaticTemplate()
+    function Spawner.addStaticTemplate(groupNames, templateName, coalition)
+        local centerObject = StaticObject:getbyName(groupNames[1])
+        if not centerObject then return end
+
+        local newTemplate = {}
+        newTemplate.templateName = templateName
+        newTemplate.units = {}
+
+        for i, groupName in ipairs(groupNames) do
+            local staticObject = StaticObject:getbyName(groupName)
+            if not staticObject then break end
+
+            local staticData = {}
+            staticData.name = groupName
+            staticData.type = staticObject:getTypeName()
+            staticData.heading = Utils.getObjHeading(staticObject)
+
+            staticData.disFromCenter = 0
+            staticData.angleFromCenter = 0
+
+            if i ~= 1 then
+                local centerPoint = centerObject:getPoint()
+                local objectPoint = staticObject:getPoint()
+
+                staticData.disFromCenter = Utils.get2DDist(centerPoint,objectPoint)
+                staticData.angleFromCenter = Utils.getDirection(centerPoint,objectPoint)
+            end
+
+            table.insert(newTemplate.units,staticData)
+        end
         
+        Spawner.staticTemplate[templateName] = newTemplate
     end
 end
