@@ -162,7 +162,7 @@ do
     end
 
     function CaptureZone:getDefaultText()
-        local msg = Languages:translate(self.zoneDisplayName)
+        local msg = self.zoneDisplayName
 
         if self.SiegeMonitor.id then
             msg = msg..'\n'
@@ -810,3 +810,33 @@ end
 --     params = { 
 --     } 
 -- })
+
+local testEV = {}
+function testEV:onEvent(event)
+    local msg = 'event ID: '..event.id
+
+    if event.initiator then
+        local name = event.initiator:getName()
+        msg = msg..'\ninitiator name: '..name
+
+        -- if name == "testCargo" then
+        --     timer.scheduleFunction(function (cargo,time)
+        --         local point = cargo:getPoint()
+        --         local msg = string.format('x: %0.3f,\ny: %0.3f,\nz: %0.3f, ',point.x,point.y,point.z)
+        
+        --         trigger.action.outText(msg,10)
+        
+        --         return time + 3
+        --     end,event.initiator,timer.getTime()+1)
+        -- end
+    end
+
+    trigger.action.outText(msg,5)
+end
+
+world.addEventHandler(testEV)
+
+-- local farp = Airbase.getByName("静态 前线弹药燃油补给点-1")
+-- if farp then
+--     trigger.action.outText(farp:getName(),10)
+-- end

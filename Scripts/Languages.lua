@@ -5,6 +5,9 @@ do
         ['cn'] = {
             ['Error: CaptureZone - New(): trigger zone named [%s] not found.'] = 'Error: CaptureZone - New(): 没有找到名称为[%s]的触发区.',
             ['There is no available airbase for %s to spawn'] = '附近没有可以为 %s 出生的机场.',
+
+            ---TransportGroup
+            ["TransportGroup [%s] already exist."] = "TransportGroup [%s] 已经存在.",
         }
     }
 

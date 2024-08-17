@@ -159,16 +159,18 @@ do
         return
     end
 
-    function Spawner.addGroupTemplate(groupName,templateName,coalition)
-        local group = Group.getByName(groupName)
+    function Spawner.generateGroupTemplate(groupOrGroupName,templateName,coalition)
+        local group = groupOrGroupName
+
+        if not group.getID then
+            group = Group.getByName(groupOrGroupName)
+        end
+        
         if not group then return end
 
         local groupData = Spawner.getGroupDataInMission(group:getID())
         if not groupData then return end
-
-        local tCoalition = coalition or group:getCoalition()
-        local tCategory = group:getCategory()
-
+        
         local templateData = {}
         templateData.templateName = templateName or groupData.name
         templateData.name = templateName or groupData.name
@@ -184,6 +186,19 @@ do
             table.insert(templateData.units,unitData)
         end
 
+        return templateData
+    end
+
+    function Spawner.addGroupTemplate(groupName,templateName,coalition)
+        local group = Group.getByName(groupName)
+        if not group then return end
+
+        local tCoalition = coalition or group:getCoalition()
+        local tCategory = group:getCategory()
+
+        local templateData = Spawner.generateGroupTemplate(group,templateName,coalition)
+        if not templateData then return end
+
         Spawner.groupTemplate[tCoalition] = Spawner.groupTemplate[tCoalition] or {}
         Spawner.groupTemplate[tCoalition][tCategory] = Spawner.groupTemplate[tCoalition][tCategory] or {}
         Spawner.groupTemplate[tCoalition][tCategory][templateData.task] = Spawner.groupTemplate[tCoalition][tCategory][templateData.task] or {}
@@ -191,8 +206,8 @@ do
         table.insert(Spawner.groupTemplate[tCoalition][tCategory][templateData.task],templateData)
     end
 
-    function Spawner.addStaticTemplate(groupNames, templateName, coalition)
-        local centerObject = StaticObject:getbyName(groupNames[1])
+    function Spawner.generateStaticTemplate(groupNames,templateName,coalition)
+        local centerObject = StaticObject.getbyName(groupNames[1])
         if not centerObject then return end
 
         local newTemplate = {}
@@ -221,7 +236,15 @@ do
 
             table.insert(newTemplate.units,staticData)
         end
+
+        return newTemplate
+    end
+
+    function Spawner.addStaticTemplate(groupNames, templateName, coalition)
         
-        Spawner.staticTemplate[templateName] = newTemplate
+        local newTemplate = Spawner.generateStaticTemplate(groupNames,templateName,coalition)
+        if not newTemplate then return end
+        
+        Spawner.staticTemplate[coalition][templateName] = newTemplate
     end
 end
